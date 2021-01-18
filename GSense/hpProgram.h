@@ -5,7 +5,7 @@
 #pragma once
 #include<string.h>
 #include<string>
-
+/*
 //Sweep parameters
 struct sweepVDS_IDSParameters
 {
@@ -23,22 +23,38 @@ struct sweepVDS_IDSParameters
 	int nCycles; //Number of cycles
 	bool fullCycle; //Return to startV
 };
+*/
+
+struct pulseGas_constVDS_IDSParameters
+{
+	double constVA; //Constant bias to apply [V]
+	double constVB;
+	double measTime; //Total measurement time [s]
+	double dtGas; //Measurement frequency [ms]
+	double dtHP;
+	double flowRate;
+	double gasConc;
+	int lRange; //Order of mag of lowest range [A]
+	int range; //Order of mag of I range [A]
+	int comp; //Compliance, max I value [A}
+	int intTime; //Integration time (1,2,3)(Fast, Normal, Long)
+};
 
 struct constVDS_IDSParameters
 {
-	double constV1; //Constant bias to apply [V]
-	double constV2;
+	double constVA; //Constant bias to apply [V]
+	double constVB;
 	double measTime; //Total measurement time [s]
 	double dt; //Measurement frequency [ms]
 	int lRange; //Order of mag of lowest range [A]
 	int range; //Order of mag of I range [A]
 	int comp; //Compliance, max I value [A}
 	int intTime; //Integration time (1,2,3)(Fast, Normal, Long)
-	char constSMU1; //SMU to keep constant
-	char constSMU2;
+	//char constSMU1; //SMU to keep constant
+	//char constSMU2;
 	//int measSMU; //SMU to measure
 };
-
+/*
 struct stepVDS_IDSParameters
 {
 	double startV; //Start step voltage [V]
@@ -57,9 +73,10 @@ struct stepVDS_IDSParameters
 	char stepSMU; //SMU to step
 	//int measSMU; //SMU to measure
 };
-
-namespace HP
+*/
+namespace HPGM
 {
+	/*
 	class sweepVDS_IDS
 	{
 	public:
@@ -84,7 +101,7 @@ namespace HP
 		bool fullCycle_; //Return to startV
 		int sizeArrayNeeded; //Size of array to hold values
 	};
-
+	*/
 	class constVDS_IDS
 	{
 	public:
@@ -92,14 +109,14 @@ namespace HP
 		constVDS_IDS(const constVDS_IDSParameters& entries);
 
 		//Runs the program, stores results in passed arrays
-		int runProgram(double vFs[], double iMs[], double tMs[], unsigned long dMs[], int sizeArray);
+		int runProgram(double iMs[], double tMs[], unsigned long dMs[], int sizeArray);
 
 		//Returns the size of array needed to store measurements
 		int arraySizeNeeded();
 
 
 		//Save the data
-		int saveData(std::string fn, double vFs[], double iMs[], double tMs[], unsigned long dMs[], int sizeArray);
+		int saveData(std::string fn,  double iMs[], double tMs[], unsigned long dMs[], int sizeArray);
 
 		~constVDS_IDS();
 	private:
@@ -110,6 +127,22 @@ namespace HP
 
 	};
 
+	class pulseGas_constVDS_IDS
+	{
+	public:
+		pulseGas_constVDS_IDS(const pulseGas_constVDS_IDSParameters& entries);
+		int runProgram(double fRMs[], double cMs[], int sizeArrayGas, double iMs[], double tMs[], unsigned long dMs[], int sizeArrayHP);
+		int arraySizeNeededGas();
+		int arraySizeNeededHP();
+		int saveData(std::string fn, double fRMs[], double cMs[], int sizeArrayGas, double iMs[], double tMs[], unsigned long dMs[], int sizeArrayHP);
+		~pulseGas_constVDS_IDS();
+	private:
+		constHPGMParameters constP_;
+		HPGM::hpGmConst* cnst_;
+		int sizeArrayNeededGas_;
+		int sizeArrayNeededHP_;
+	};
+	/*
 	class stepVDS_IDS
 	{
 	public:
@@ -137,5 +170,5 @@ namespace HP
 		void reverseV();
 
 	};
-
+	*/
 }

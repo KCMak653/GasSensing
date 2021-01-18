@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <malloc.h>
+#include <conio.h>
 #include<iostream>
 #include<chrono>
 #include <thread>
@@ -15,10 +16,10 @@ namespace HP
 	{
 		dt_ = entries.dt;
 		measTime_ = entries.measTime;
-		constV1_ = entries.constV1;
-		constV2_ = entries.constV2;
-		constSMU1_ = entries.constSMU1;
-		constSMU2_ = entries.constSMU2;
+		constVA_ = entries.constVA;
+		constVB_ = entries.constVB;
+		//constSMU1_ = entries.constSMU1;
+		//constSMU2_ = entries.constSMU2;
 		//measSMU_ = entries.measSMU;
 		lRange_ = entries.lRange;
 		range_ = entries.range;
@@ -34,6 +35,8 @@ namespace HP
 		picoAm_->setLRange(lRange_);
 		picoAm_->setRange(range_); 
 		picoAm_->setIntTime(intTime_);
+		picoAm_->setVAmode(5);
+		picoAm_->setVBmode(1);
 
 
 		//Set the minimum time of each measurement based on the
@@ -66,7 +69,7 @@ namespace HP
 		picoAm_->srcZeroAll();
 	}
 
-	int hpConst::runTest(double vFs[], double iMs[], double tMs[], unsigned long dMs[], int sizeArray, int iStart)
+	int hpConst::runTest(double iMs[], double tMs[], unsigned long dMs[], int sizeArray, int iStart)
 	{
 		//First ensure that the correct array size has been passed as argument
 		if (sizeArrayNeeded_ != sizeArray) {
@@ -75,18 +78,21 @@ namespace HP
 		}
 		unsigned long delayT;
 
-		double v1 = constV1_;
-		double v2 = constV2_;
 		//Initiate the timer
 		//auto clk = std::chrono::high_resolution_clock::now();
 		//auto clk2 = std::chrono::high_resolution_clock::now();
 		auto clk = std::chrono::high_resolution_clock::now();
 
 		//Apply constant bias
-		std::cout << "V: " << constV1_ << std::endl;
-		picoAm_->vForce(constSMU2_, v2);
+		//std::cout << "V: " << constV1_ << std::endl;
 
-		picoAm_->vForce(constSMU1_, v1);
+		//picoAm_->vForce(constSMU2_, v2);
+		//_getch();
+		picoAm_->vForce(constVA_, constVB_);
+
+		
+
+		
 		
 
 		//Run the sweep. 
@@ -94,7 +100,7 @@ namespace HP
 		//Measure I and time
 		//Delay for the remainder of the measurment time
 
-		vFs[iStart] = v1;
+		//vFs[iStart] = v1;
 		auto clk2 = std::chrono::high_resolution_clock::now();
 		//Measure and store current
 		picoAm_->iMeas(iMs[iStart]);
@@ -118,7 +124,7 @@ namespace HP
 		//Repeat for length of array, since multiple sweeps may occur,
 		//the indices of where to store data in array will differe by iStart
 		for (int i = (iStart + 1); i < (iStart + sizeArray); i++) {
-			vFs[i] = v1;
+			//vFs[i] = v1;
 			picoAm_->iMeas(iMs[i]);
 			clk2 = std::chrono::high_resolution_clock::now();
 			tMs[i] = std::chrono::duration_cast<std::chrono::milliseconds> (clk2 - clk).count();
@@ -132,15 +138,16 @@ namespace HP
 	}
 
 	int hpConst::arraySizeNeeded() {
+		std::cout << "Array size" << sizeArrayNeeded_ << std::endl;
 		return sizeArrayNeeded_;
 	}
-
+	/*
 	int hpConst::setV1(double v)
 	{
 		constV1_ = v;
 		return 0;
 	}
-
+	*/
 	hpConst::~hpConst() {
 		picoAm_->srcZeroAll();
 		delete picoAm_;

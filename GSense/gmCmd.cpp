@@ -50,6 +50,7 @@ namespace GM
 			std::cout << "Error in opening serial port" << std::endl;
 			DWORD lastError = GetLastError();
 			std::cout << lastError << std::endl;
+			exit(1);
 		}
 		
 
@@ -165,6 +166,7 @@ namespace GM
 				for (j = 0; j < i - 1; j++)
 					std::cout << SerialBuffer_[j];
 			}
+			std::cout<<std::endl;
 		}
 
 		return 0;
@@ -220,7 +222,10 @@ namespace GM
 		{
 			strVal.push_back(SerialBuffer_[i]);
 		}
-		measVal = std::stod(strVal);
+		if (!strVal.empty()) {
+			measVal = std::stod(strVal);
+		}
+		else measVal = 0;
 
 		return 0;
 	}
@@ -265,11 +270,17 @@ namespace GM
 		//Need to do this incrementally because it won't begin to flow if
 		// it is immediately set. Once it is flowing at 200CCM, it is easy to increase
 		// if necessary.
+		double measFlow;
+		//Return if it already is in range
+		measFlowRate(measFlow, TRUE);
+		if ((measFlow > 150) & (measFlow < 300)) {
+			return 0;
+		}
 		bool notSet = TRUE;
 		int nTimes = 0;
 		//Try 3 times, if it didn't work
 		int concs[] = { 2000, 1000, 500, 300, 200 };
-		double measFlow;
+		
 		while (notSet)
 		{
 			for (int i = 0; i < 5; i++) {
@@ -324,7 +335,7 @@ namespace GM
 	gmCmd::~gmCmd() {
 		//At some point include command to close all channels
 		// chAllOff();
-		setFlowRate(0);
+		//setFlowRate(0);
 		Sleep(3000);
 		CloseHandle(hComm_);
 		std::cout << "Gas Mixer Shut Down" << std::endl;

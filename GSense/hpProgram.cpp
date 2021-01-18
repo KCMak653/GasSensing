@@ -1,7 +1,10 @@
 #include "hpCmd.h"
+#include "gmCmd.h"
 #include "hpSweep.h"
 #include "hpConst.h"
+#include "hpGmConst.h"
 #include "hpProgram.h"
+
 #include <string.h>
 #include<Windows.h>
 #include <stdio.h>
@@ -13,8 +16,9 @@
 #include<string>
 #include <fstream>
 
-namespace HP
+namespace HPGM
 {
+	/*
 	sweepVDS_IDS::sweepVDS_IDS(const sweepVDS_IDSParameters& entries)
 	{
 		//Set all private member variables to inputs
@@ -109,17 +113,17 @@ namespace HP
 	sweepVDS_IDS::~sweepVDS_IDS() {
 		delete swp_;
 	}
-
+	*/
 	constVDS_IDS::constVDS_IDS(const constVDS_IDSParameters& entries) {
 
 		//Set all private member variables to inputs
 		constP_.dt = entries.dt;
-		constP_.constSMU1 = entries.constSMU1;
-		constP_.constSMU2 = entries.constSMU2;
+		//constP_.constSMU1 = entries.constSMU1;
+		//constP_.constSMU2 = entries.constSMU2;
 		//constP_.measSMU = entries.measSMU;
 		constP_.measTime = entries.measTime;
-		constP_.constV1 = entries.constV1;
-		constP_.constV2 = entries.constV2;
+		constP_.constVA = entries.constVA;
+		constP_.constVB = entries.constVB;
 		constP_.lRange = entries.lRange;
 		constP_.range = entries.range;
 		constP_.comp = entries.comp;
@@ -137,14 +141,14 @@ namespace HP
 		return cnstSize_;
 	}
 
-	int constVDS_IDS::runProgram(double vFs[], double iMs[], double tMs[], unsigned long dMs[], int sizeArray)
+	int constVDS_IDS::runProgram(double iMs[], double tMs[], unsigned long dMs[], int sizeArray)
 	{
 		int iStart = 0;
-		cnst_->runTest(vFs, iMs, tMs, dMs, cnstSize_, iStart);
+		cnst_->runTest(iMs, tMs, dMs, cnstSize_, iStart);
 		return 0;
 	}
 
-	int constVDS_IDS::saveData(std::string fn, double vFs[], double iMs[], double tMs[], unsigned long dMs[], int sizeArray)
+	int constVDS_IDS::saveData(std::string fn, double iMs[], double tMs[], unsigned long dMs[], int sizeArray)
 	{
 
 		//Data directory
@@ -158,20 +162,20 @@ namespace HP
 
 		std::ofstream myfile;
 		myfile.open(fp);
-		myfile << "vForce [V], iMeas [A], time [ms], dTime [ms]\n";
+		myfile << "iMeas [A], time [ms], dTime [ms]\n";
 		for (int i = 0; i < sizeArray; i++)
 		{
-			myfile << vFs[i] << ',' << iMs[i] << ',' << tMs[i] << ',' << dMs[i] << "\n";
+			myfile << iMs[i] << ',' << tMs[i] << ',' << dMs[i] << "\n";
 		}
 		myfile.close();
 
 		//std::string fnP = "P_" + fn;
 		std::ofstream myfile2;
 		myfile2.open(fpP);
-		myfile2 << "dt [ms], measTime [s], constV1 [V], constV2 [V], lRange, range, comp, intTime, constSMU1, constSMU2\n";
-		myfile2 << constP_.dt << "," << constP_.measTime << ',' << constP_.constV1 << ',' << constP_.constV2 << ','
+		myfile2 << "dt [ms], measTime [s], constVA [V], constVB [V], lRange, range, comp, intTime\n";
+		myfile2 << constP_.dt << "," << constP_.measTime << ',' << constP_.constVA << ',' << constP_.constVB << ','
 			<< constP_.lRange << ',' << constP_.range << ',' << constP_.comp << ','
-			<< constP_.intTime << ',' << ',' << constP_.constSMU1 << ',' << constP_.constSMU2 << "\n";
+			<< constP_.intTime << "\n";
 		myfile2.close();
 
 		return 0;
@@ -181,6 +185,89 @@ namespace HP
 		delete cnst_;
 	}
 
+	pulseGas_constVDS_IDS::pulseGas_constVDS_IDS(const pulseGas_constVDS_IDSParameters& entries)
+	{
+
+		//Set all private member variables to inputs
+		constP_.dtGas = entries.dtGas;
+		constP_.dtHP = entries.dtHP;
+
+		constP_.measTime = entries.measTime;
+		constP_.constVA = entries.constVA;
+		constP_.constVB = entries.constVB;
+		constP_.lRange = entries.lRange;
+		constP_.range = entries.range;
+		constP_.comp = entries.comp;
+		constP_.intTime = entries.intTime;
+
+		constP_.flowRate = entries.flowRate;
+		constP_.gasConc = entries.gasConc;
+
+		cnst_ = new HPGM::hpGmConst(constP_);
+
+		sizeArrayNeededGas_ = cnst_->arraySizeNeededGas();
+		sizeArrayNeededHP_ = cnst_->arraySizeNeededHP();
+	}
+
+	int pulseGas_constVDS_IDS::arraySizeNeededGas()
+	{
+		return sizeArrayNeededGas_;
+	}
+
+	int pulseGas_constVDS_IDS::arraySizeNeededHP()
+	{
+		return sizeArrayNeededHP_;
+	}
+	int pulseGas_constVDS_IDS::runProgram(double fRMs[], double cMs[], int sizeArrayGas, double iMs[], double tMs[], unsigned long dMs[], int sizeArrayHP)
+	{
+		int iStart = 0;
+		cnst_->runTest(fRMs, cMs, sizeArrayGas, iStart, iMs, tMs, dMs, sizeArrayHP, iStart);
+		return 0;
+	}
+	int pulseGas_constVDS_IDS::saveData(std::string fn, double fRMs[], double cMs[], int sizeArrayGas, double iMs[], double tMs[], unsigned long dMs[], int sizeArrayHP)
+	{
+
+		//Data directory
+		std::string direc = "C:/Users/ECAN/Documents/KMData/Data/";
+		//save as text file
+		std::string frmt = ".csv";
+
+		//Build file name for data and a second one to save test parameters
+		std::string fp = direc + fn + frmt;
+		std::string fpG = direc + fn + "_Gas" + frmt;
+		std::string fpP = direc + fn + "_Param" + frmt;
+
+		std::ofstream myfile;
+		myfile.open(fp);
+		myfile << "iMeas [A], time [ms], dTime [ms]\n";
+		for (int i = 0; i < sizeArrayHP; i++)
+		{
+			myfile << iMs[i] << ',' << tMs[i] << ',' << dMs[i] << "\n";
+		}
+		myfile.close();
+		std::ofstream myfile3;
+		myfile3.open(fpG);
+		myfile3 << "flowRate [ccm], gasConc [ppm]\n";
+		for (int i = 0; i < sizeArrayGas; i++) {
+			myfile3 << fRMs[i] << ',' << cMs[i] << "\n";
+		}
+		//std::string fnP = "P_" + fn;
+		std::ofstream myfile2;
+		myfile2.open(fpP);
+		myfile2 << "dtHP [ms],dtGas [ms], measTime [s], constVA [V], constVB [V], flowRate [ccm], gasConc [ppm], lRange, range, comp, intTime\n";
+		myfile2 << constP_.dtHP << ','<<constP_.dtGas << "," << constP_.measTime << ',' << constP_.constVA << ',' << constP_.constVB << ','
+			<<constP_.flowRate<< ',' <<constP_.gasConc<< ',' << constP_.lRange << ',' << constP_.range << ',' << constP_.comp << ','
+			<< constP_.intTime << "\n";
+		myfile2.close();
+
+		return 0;
+	}
+
+	pulseGas_constVDS_IDS::~pulseGas_constVDS_IDS() {
+		delete cnst_;
+	}
+
+	/*
 	stepVDS_IDS::stepVDS_IDS(const stepVDS_IDSParameters& entries) {
 
 		//Set all private member variables to inputs
@@ -322,5 +409,5 @@ namespace HP
 	stepVDS_IDS::~stepVDS_IDS() {
 		delete step_;
 	}
-
+*/
 }

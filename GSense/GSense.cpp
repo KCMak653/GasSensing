@@ -7,6 +7,7 @@
 #include "gmCmd.h"
 #include "hpCmd.h"
 #include "hpConst.h"
+#include "hpGmConst.h"
 #include "hpSweep.h"
 #include "hpProgram.h"
 #include <thread>
@@ -15,37 +16,106 @@ int main()
 {
     std::cout << "Hello World!\n";
     
-    GM::gmCmd test1;
-    //test1.setAnalyteGas(2);
+   // GM::gmCmd test1;
+    
+    
     //test1.setFlowRate(2000);
-    //double val;
+    double val;
     //Sleep(2000);
     //test1.measFlowRate(val, TRUE);
-    test1.setCarrBase();
-    //test1.measFlowRate(val, TRUE);
-    
-    
-    constVDS_IDSParameters constP;
-    constP.constV1 = -8;
-    constP.constV2 = 0.02;
-    constP.measTime = 64800;
-    constP.dt = 10000;
+    //test1.setCarrBase();
+    /*
+    test1.measFlowRate(val, TRUE);
+    test1.setAnalyteGas(3);
+    test1.setFlowRate(300);
+    Sleep(2000);
+    test1.measFlowRate(val, TRUE);
+    test1.setAnalyteConc(300);
+    for (int i = 0; i < 20; i++) {
+        Sleep(2000);
+        std::cout << "Conc: " << std::endl;
+        test1.measAnalyteConc(val, TRUE);
+        std::cout << "Flowrate: " << std::endl;
+        test1.measFlowRate(val, TRUE);
+    }
+    */
+    pulseGas_constVDS_IDSParameters constP;
+    constP.constVA = .02;
+    constP.constVB = .1;
+    constP.measTime = 300;
+    constP.dtGas = 10000;
+    constP.dtHP = 1000;
     constP.lRange = 12;
     constP.range = 1;
     constP.intTime = 1;
     constP.comp = 1;
-    constP.constSMU1 = 'A';
-    constP.constSMU2 = 'B';
+
+    constP.flowRate = 300;
+    constP.gasConc = 300;
+
+    HPGM::pulseGas_constVDS_IDS tst(constP);
+    
+    
+    int arraySizeGas = tst.arraySizeNeededGas();
+    int arraySizeHP = tst.arraySizeNeededHP();
+    //double* vFs = new double[arraySize];
+    double* iMs = new double[arraySizeHP];
+    double* tMs = new double[arraySizeHP];
+    unsigned long* dMs = new unsigned long[arraySizeHP];
+
+    double* fRMs = new double[arraySizeGas];
+    double* cMs = new double[arraySizeGas];
+
+    tst.runProgram(fRMs, cMs, arraySizeGas, iMs, tMs, dMs, arraySizeHP);
+
+    for (int i = 0; i < arraySizeHP; i++) {
+        std::cout << "i: " << iMs[i] << std::endl;
+        std::cout << "t: " << tMs[i] << std::endl;
+        std::cout << "d: " << dMs[i] << std::endl;
+    }
+
+    for (int i = 0; i < arraySizeGas; i++) {
+        std::cout << "FR: :" << fRMs[i] << std::endl;
+        std::cout << "C: " << cMs[i] << std::endl;
+
+    }
+
+    std::string fn = "constGasTest";
+    tst.saveData(fn, fRMs, cMs, arraySizeGas, iMs, tMs, dMs, arraySizeHP);
+    delete iMs;
+    delete tMs;
+    delete dMs;
+    delete fRMs;
+    delete cMs;
+
+
+
+
+    /*
+    constVDS_IDSParameters constP;
+    constP.constVA = .02;
+    constP.constVB = .1;
+    constP.measTime = 10;
+    constP.dt = 1000;
+    constP.lRange = 12;
+    constP.range = 1;
+    constP.intTime = 1;
+    constP.comp = 1;
+    //constP.constSMU1 = 'A';
+    //constP.constSMU2 = 'B';
     
     HP::constVDS_IDS tst(constP);
 
     int arraySize = tst.arraySizeNeeded();
-    double* vFs = new double[arraySize];
+    //double* vFs = new double[arraySize];
     double* iMs = new double[arraySize];
     double* tMs = new double[arraySize];
     unsigned long* dMs = new unsigned long[arraySize];
 
-    tst.runProgram(vFs, iMs, tMs, dMs, arraySize);
+    std::string fn = "constTest21";
+
+    tst.runProgram(iMs, tMs, dMs, arraySize);
+    tst.saveData(fn, iMs, tMs, dMs, arraySize);
     /*
     for (int i = 0; i < arraySize; i++) {
         std::cout << "F: :" << vFs[i] << std::endl;
@@ -53,20 +123,20 @@ int main()
         std::cout << "t: " << tMs[i] << std::endl;
         std::cout << "d: " << dMs[i] << std::endl;
     }
-    */
-    delete vFs;
+    
+
     delete iMs;
     delete tMs;
     delete dMs;
     
     /*
-    stepVDS_IDSParameters constP;
+    sweepVDS_IDSParameters constP;
     constP.constV = 0.02;
-    constP.startV = 0;
-    constP.stopV = -2;
-    constP.stepV = 1;
-    constP.stepTime = 2;
-    constP.dt = 1000;
+    constP.startV = -2;
+    constP.stopV = 4;
+    constP.SR = 0.8;
+    //constP.stepTime = 2;
+    //constP.dt = 1000;
     //constP.measTime = 20;
     //constP.dt = 5000;
     constP.lRange = 12;
@@ -74,11 +144,11 @@ int main()
     constP.intTime = 1;
     constP.comp = 1;
     constP.constSMU = 'B';
-    constP.stepSMU = 'A';
+    constP.sweepSMU = 'A';
     constP.nCycles = 1;
     constP.fullCycle = TRUE;
 
-    HP::stepVDS_IDS tst(constP);
+    HP::sweepVDS_IDS tst(constP);
 
     int arraySize = tst.arraySizeNeeded();
     std::cout << arraySize << std::endl;

@@ -2,7 +2,7 @@
 #include<Windows.h>
 #include<stdio.h>
 #include <iostream>
-
+#include <conio.h>
 #include "hpCmd.h"
 
 #include "C:/Program Files/National Instruments/Shared/ExternalCompilerSupport/C/include/ni4882.h"
@@ -10,7 +10,7 @@
 //HP Picoammeter constants
 
 //Communication Parameters
-#define ARRAYSIZE_RD 20 //Size of read buffer (HP)
+#define ARRAYSIZE_RD 19 //Size of read buffer (HP)
 #define BDINDEX 0 //GPIB board address
 
 #ifndef PRIMARY_ADDR_HP
@@ -47,6 +47,9 @@ const int setIntTimeInd = 1;
 const int setCompArrSize = 3;
 const int setCompInd = 1;
 
+const int setModeArrSize = 3;
+const int setModeInd = 1;
+
 namespace HP
 {
 	hpCmd::hpCmd() {
@@ -60,6 +63,10 @@ namespace HP
 		strcpy_s(setVAcompCMD_, setCompArrSize, VAcompCMD);
 		static char const VBcompCMD[] = "M2";
 		strcpy_s(setVBcompCMD_, setCompArrSize, VBcompCMD);
+		static char const VAmodeCMD[] = "A5";
+		strcpy_s(setVAmodeCMD_, setModeArrSize, VAmodeCMD);
+		static char const VBmodeCMD[] = "B1";
+		strcpy_s(setVBmodeCMD_, setModeArrSize, VBmodeCMD);
 		//static char const vAForce[] = "PA+0000.00;"
 		
 		//std::cout << setVAcompCMD_ << std::endl;
@@ -93,8 +100,9 @@ namespace HP
 		//ibwrt(Dev_, "RI 2, 1E-3, 1E-3", 16);
 		//ibwrt(Dev_, "RG 2, 1E-3", 10);
 
-
-		//ibwrt(Dev_, "UL", 2);
+		//Set current mode
+		ibwrt(Dev_, "F1", 2);
+		//ibwrt(Dev_, "A5");
 		//char cmd4[] = "RI 2, 1E-5, 1E-5";
 		//ibwrt(Dev_, cmd4, strlen(cmd4));
 		hpStatus = 0;
@@ -142,6 +150,41 @@ namespace HP
 		}
 		return 0;
 	}
+
+	int hpCmd::setVAmode(const int vAmode)
+	{
+		char j = '0' + vAmode;
+		setVAmodeCMD_[setModeInd] = j;
+		//std::cout << setVBcompCMD_ << std::endl;
+		ibwrt(Dev_, setVAmodeCMD_, setModeArrSize);
+		if (Ibsta() & ERR)
+		{
+			_GPIBCleanup("Unable to set VB compliance");
+			hpStatus = 1;
+			return hpStatus;
+		}
+		return 0;
+	}
+
+	int hpCmd::setVBmode(const int vBmode)
+	{
+		char j = '0' + vBmode;
+		setVBmodeCMD_[setModeInd] = j;
+		//std::cout << setVBcompCMD_ << std::endl;
+		ibwrt(Dev_, setVBmodeCMD_, setModeArrSize);
+		if (Ibsta() & ERR)
+		{
+			_GPIBCleanup("Unable to set VB compliance");
+			hpStatus = 1;
+			return hpStatus;
+		}
+		return 0;
+	}
+
+
+
+
+
 
 	int hpCmd::setLRange(const int lRange)
 	{
@@ -200,19 +243,28 @@ namespace HP
 	}
 
 	int hpCmd::srcZeroAll() {
-		vForce('A', 0);
-		vForce('B', 0);
+		//vForce('A', 0);
+		//vForce('B', 0);
+		ibwrt(Dev_, "W7", 2);
 		return 0;
 	}
 
-	int hpCmd::vForce(char SMU, double vF)
+	int hpCmd::vForce(double vA, double vB)
 	{
-		std::string strCMD = "P" + std::string(1, SMU) + std::to_string(vF) + ";";
-		//std::cout << strCMD << std::endl;
+		std::string strCMD = "PA" + std::to_string(vA)+",";
+		std::cout << strCMD << std::endl;
 		char* charCMD;
 		charCMD = &strCMD[0];
 		DWORD cmdSize = strlen(strCMD.c_str());
 		ibwrt(Dev_, charCMD, cmdSize);
+		strCMD = "PB" + std::to_string(vB) + ",";
+		std::cout << strCMD << std::endl;
+		charCMD = &strCMD[0];
+		cmdSize = strlen(strCMD.c_str());
+		ibwrt(Dev_, charCMD, cmdSize);
+
+		//Trigger
+		ibwrt(Dev_, "W1", 2);
 		//std::cout<<vForceCMD_<<std::endl;
 		//GPIBCleanup(Dev, "Unable to write to multimeter");
 		if (Ibsta() & ERR)
@@ -234,8 +286,11 @@ namespace HP
 			_GPIBCleanup("Unable to read data from multimeter");
 			return 1;
 		}
-		sscanf_s(ValueStr, "%*[^0-9]%lf", &measVal);
+		//measVal = 2.3;
+		//sscanf_s(ValueStr, "%*[^0-9]%lf", &measVal);
 
+		std::string strVal = ValueStr;
+		measVal = std::stod(strVal.substr(strVal.find("NI")+2, strVal.find(",")-1));
 		return 0;
 	}
 
@@ -253,7 +308,7 @@ namespace HP
 	hpCmd::~hpCmd() {
 
 		// The device is taken offline.
-
+		ibwrt(Dev_, "W7", 2);
 		ibonl(Dev_, 0);
 		std::cout << "Picoammeter has been shut down" << std::endl;
 	}
