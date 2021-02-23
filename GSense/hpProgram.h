@@ -29,7 +29,11 @@ struct pulseGas_constVDS_IDSParameters
 {
 	double constVA; //Constant bias to apply [V]
 	double constVB;
-	double measTime; //Total measurement time [s]
+	double initTime; //Initial settle time [s]
+	double stepTime; //Time between pulses [s]
+	double pulseTime; //Pulse time [s]
+	double endTime; //End time [s]
+	int nPulses;
 	double dtGas; //Measurement frequency [ms]
 	double dtHP;
 	double flowRate;
@@ -141,6 +145,20 @@ namespace HPGM
 		HPGM::hpGmConst* cnst_;
 		int sizeArrayNeededGas_;
 		int sizeArrayNeededHP_;
+		int initSizeGas_;
+		int endSizeGas_;
+		int stepSizeGas_;
+		int pulseSizeGas_;
+		int initSizeHP_;
+		int endSizeHP_;
+		int stepSizeHP_;
+		int pulseSizeHP_;
+		double gasConc_;
+		double initTime_;
+		double pulseTime_;
+		double stepTime_;
+		double endTime_;
+		int nPulses_;
 	};
 	/*
 	class stepVDS_IDS

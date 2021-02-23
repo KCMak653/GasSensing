@@ -20,6 +20,8 @@ namespace HPGM
 		measTime_ = entries.measTime;
 		constVA_ = entries.constVA;
 		constVB_ = entries.constVB;
+		//setV_ = entries.setV;
+		setV_ = TRUE;
 		//constSMU1_ = entries.constSMU1;
 		//constSMU2_ = entries.constSMU2;
 		//measSMU_ = entries.measSMU;
@@ -75,9 +77,9 @@ namespace HPGM
 		}
 
 		//Calculate the size of array needed to record measurements
-		sizeArrayNeededHP_ = measTime_ * 1e3 / dtHP_ + 1.5;
+		sizeArrayNeededHP_ = (measTime_ * 1e3 / dtHP_ + 0.5);
 		std::cout << "HP array: " << sizeArrayNeededHP_ << std::endl;
-		sizeArrayNeededGas_ = measTime_ * 1e3 / dtGas_ + 1.5;
+		sizeArrayNeededGas_ = (measTime_ * 1e3 / dtGas_ + 0.5);
 		std::cout << "Gas array: " << sizeArrayNeededGas_ << std::endl;
 		relFreqHPGas_ = (sizeArrayNeededHP_ - 1) / (sizeArrayNeededGas_ - 1);
 		std::cout << "relFreq: " << relFreqHPGas_ << std::endl;
@@ -110,7 +112,12 @@ namespace HPGM
 
 		//picoAm_->vForce(constSMU2_, v2);
 		//_getch();
-		picoAm_->vForce(constVA_, constVB_);
+		//Only force V if setV is true
+		if (setV_) {
+			picoAm_->vForce(constVA_, constVB_);
+			setV_ = FALSE;
+		}
+
 		gasM_->setAnalyteGas(3);
 		gasM_->setFlowRate(flowRate_);
 		gasM_->setAnalyteConc(gasConc_);
@@ -146,26 +153,32 @@ namespace HPGM
 
 		//Repeat for length of array, since multiple sweeps may occur,
 		//the indices of where to store data in array will differe by iStart
-		for (int i = (iStartGas + 1); i < (iStartGas + sizeArrayGas); i++) {
-			//vFs[i] = v1;
-			for (int j = (iStartHP + 1); j < (iStartHP + relFreqHPGas_+1); j++) {
+		iStartHP = iStartHP + 1;
+		iStartGas = iStartGas + 1;
+
+		for (int i = (iStartGas); i < (iStartGas + sizeArrayNeededGas_); i++) {
+
+			for (int j = (iStartHP); j < (iStartHP + relFreqHPGas_ ); j++) {
 
 				picoAm_->iMeas(iMs[j]);
 
 				clk2 = std::chrono::high_resolution_clock::now();
 				tMs[j] = std::chrono::duration_cast<std::chrono::milliseconds> (clk2 - clk).count();
-		
+
 				delayT = dtHP_ * (j + 1) - tMs[j];
 				if ((dtHP_ * (j + 1) - tMs[j]) < 0) { delayT = 0; }
 				dMs[j] = delayT;
 
 				std::this_thread::sleep_for(std::chrono::milliseconds(delayT));
 			}
+
 			gasM_->measFlowRate(fRMs[i], FALSE);
 			gasM_->measAnalyteConc(cMs[i], FALSE);
 			iStartHP = iStartHP + relFreqHPGas_;
+			std::cout << "\n Number of seconds remaining: " << (sizeArrayNeededHP_ - iStartHP+1)*dtHP_ << std::endl;
 
-		}
+			}
+
 
 		return 0;
 	}
@@ -178,6 +191,39 @@ namespace HPGM
 	int hpGmConst::arraySizeNeededHP(){
 		std::cout << "Array size HP" << sizeArrayNeededHP_ << std::endl;
 		return sizeArrayNeededHP_;
+	}
+
+	int hpGmConst::setMeasTime(double measTime) {
+		measTime_ = measTime;
+		sizeArrayNeededHP_ = (measTime_ * 1e3 / dtHP_ + 0.5);
+		std::cout << "HP array: " << sizeArrayNeededHP_ << std::endl;
+		sizeArrayNeededGas_ = (measTime_ * 1e3 / dtGas_ + 0.5);
+		std::cout << "Gas array: " << sizeArrayNeededGas_ << std::endl;
+		relFreqHPGas_ = (sizeArrayNeededHP_ - 1) / (sizeArrayNeededGas_ - 1);
+		std::cout << "relFreq: " << relFreqHPGas_ << std::endl;
+		return 0;
+	}
+
+	int hpGmConst::setGasConc(double gasConc) {
+		gasConc_ = gasConc;
+		return 0;
+	}
+
+	int hpGmConst::setFlowRate(double flowRate) {
+		flowRate_ = flowRate;
+		return 0;
+	}
+
+	int hpGmConst::setConstVA(double v) {
+		constVA_ = v;
+		setV_ = TRUE;
+		return 0;
+	}
+
+	int hpGmConst::setConstVB(double v) {
+		constVB_ = v;
+		setV_ = TRUE;
+		return 0;
 	}
 	/*
 	int hpConst::setV1(double v)

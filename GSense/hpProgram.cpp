@@ -192,7 +192,7 @@ namespace HPGM
 		constP_.dtGas = entries.dtGas;
 		constP_.dtHP = entries.dtHP;
 
-		constP_.measTime = entries.measTime;
+		constP_.measTime = entries.initTime;
 		constP_.constVA = entries.constVA;
 		constP_.constVB = entries.constVB;
 		constP_.lRange = entries.lRange;
@@ -201,12 +201,37 @@ namespace HPGM
 		constP_.intTime = entries.intTime;
 
 		constP_.flowRate = entries.flowRate;
-		constP_.gasConc = entries.gasConc;
+		constP_.gasConc = 0;
+
+		initTime_ = entries.initTime;
+		stepTime_ = entries.stepTime;
+		pulseTime_ = entries.pulseTime;
+		endTime_ = entries.endTime;
+		nPulses_ = entries.nPulses;
+
+		gasConc_ = entries.gasConc;
 
 		cnst_ = new HPGM::hpGmConst(constP_);
 
-		sizeArrayNeededGas_ = cnst_->arraySizeNeededGas();
-		sizeArrayNeededHP_ = cnst_->arraySizeNeededHP();
+		initSizeGas_ = cnst_->arraySizeNeededGas();
+		initSizeHP_ = cnst_->arraySizeNeededHP();
+
+		cnst_->setMeasTime(stepTime_);
+		stepSizeGas_ = cnst_->arraySizeNeededGas();
+		stepSizeHP_ = cnst_->arraySizeNeededHP();
+
+		cnst_->setMeasTime(pulseTime_);
+		pulseSizeGas_ = cnst_->arraySizeNeededGas();
+		pulseSizeHP_ = cnst_->arraySizeNeededHP();
+
+		cnst_->setMeasTime(endTime_);
+		endSizeGas_ = cnst_->arraySizeNeededGas();
+		endSizeHP_ = cnst_->arraySizeNeededHP();
+
+		cnst_->setMeasTime(initTime_);
+
+		sizeArrayNeededGas_ = initSizeGas_ = (stepSizeGas_ + pulseSizeGas_ - 1) * nPulses_ + endSizeGas_ - 1;
+		sizeArrayNeededHP_ = initSizeHP_ = (stepSizeHP_ + pulseSizeHP_ - 1) * nPulses_ + endSizeHP_ - 1;
 	}
 
 	int pulseGas_constVDS_IDS::arraySizeNeededGas()
@@ -220,8 +245,37 @@ namespace HPGM
 	}
 	int pulseGas_constVDS_IDS::runProgram(double fRMs[], double cMs[], int sizeArrayGas, double iMs[], double tMs[], unsigned long dMs[], int sizeArrayHP)
 	{
-		int iStart = 0;
-		cnst_->runTest(fRMs, cMs, sizeArrayGas, iStart, iMs, tMs, dMs, sizeArrayHP, iStart);
+		if (sizeArrayGas != sizeArrayNeededGas_) {
+			std::cout << "Incorrect Gas Array size" << std::endl;
+			return 1;
+		}
+
+		if (sizeArrayHP != sizeArrayNeededHP_) {
+			std::cout << "Incorrect HP Array size" << std::endl;
+			return 1;
+		}
+
+		int iStartGas = 0;
+		int iStartHP = 0;
+		cnst_->runTest(fRMs, cMs, initSizeGas_, iStartGas, iMs, tMs, dMs, initSizeHP_, iStartHP);
+		iStartGas = iStartGas + initSizeGas_ - 1;
+		iStartHP = iStartHP + initSizeHP_ - 1;
+
+		for (int i = 0; i < nPulses_; i++) {
+			cnst_->setMeasTime(pulseTime_);
+			cnst_->setGasConc(gasConc_);
+			cnst_->runTest(fRMs, cMs, pulseSizeGas_, iStartGas, iMs, tMs, dMs, pulseSizeHP_, iStartHP);
+			cnst_->setMeasTime(stepTime_);
+			cnst_->setGasConc(0);
+			iStartGas = iStartGas + pulseSizeGas_ - 1;
+			iStartHP = iStartHP + pulseSizeHP_ - 1;
+			cnst_->runTest(fRMs, cMs, stepSizeGas_, iStartGas, iMs, tMs, dMs, stepSizeHP_, iStartHP);
+			iStartGas = iStartGas + stepSizeGas_;
+			iStartHP = iStartHP + stepSizeHP_;
+		}
+
+		cnst_->setMeasTime(endTime_);
+		cnst_->runTest(fRMs, cMs, endSizeGas_, iStartGas, iMs, tMs, dMs, endSizeHP_, iStartHP);
 		return 0;
 	}
 	int pulseGas_constVDS_IDS::saveData(std::string fn, double fRMs[], double cMs[], int sizeArrayGas, double iMs[], double tMs[], unsigned long dMs[], int sizeArrayHP)
@@ -254,8 +308,9 @@ namespace HPGM
 		//std::string fnP = "P_" + fn;
 		std::ofstream myfile2;
 		myfile2.open(fpP);
-		myfile2 << "dtHP [ms],dtGas [ms], measTime [s], constVA [V], constVB [V], flowRate [ccm], gasConc [ppm], lRange, range, comp, intTime\n";
-		myfile2 << constP_.dtHP << ','<<constP_.dtGas << "," << constP_.measTime << ',' << constP_.constVA << ',' << constP_.constVB << ','
+		myfile2 << "dtHP [ms],dtGas [ms], initTime [s], pulseTime [s], stepTime [s], endTime [s], nPulses, constVA [V], constVB [V], flowRate [ccm], gasConc [ppm], lRange, range, comp, intTime\n";
+		myfile2 << constP_.dtHP << ','<<constP_.dtGas << "," << initTime_ << ',' << pulseTime_ << ',' << stepTime_ << ','
+			<<endTime_ << ','<< nPulses_ << ',' << constP_.constVA << ',' << constP_.constVB << ','
 			<<constP_.flowRate<< ',' <<constP_.gasConc<< ',' << constP_.lRange << ',' << constP_.range << ',' << constP_.comp << ','
 			<< constP_.intTime << "\n";
 		myfile2.close();

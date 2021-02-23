@@ -16,33 +16,38 @@ int main()
 {
     std::cout << "Hello World!\n";
     
-   // GM::gmCmd test1;
+   GM::gmCmd test1;
     
     
     //test1.setFlowRate(2000);
+    
     double val;
-    //Sleep(2000);
-    //test1.measFlowRate(val, TRUE);
+    Sleep(2000);
+    test1.measFlowRate(val, TRUE);
     //test1.setCarrBase();
-    /*
+    
+    
     test1.measFlowRate(val, TRUE);
     test1.setAnalyteGas(3);
     test1.setFlowRate(300);
     Sleep(2000);
     test1.measFlowRate(val, TRUE);
-    test1.setAnalyteConc(300);
-    for (int i = 0; i < 20; i++) {
+    test1.setAnalyteConc(50);
+    for (int i = 0; i < 10; i++) {
         Sleep(2000);
         std::cout << "Conc: " << std::endl;
         test1.measAnalyteConc(val, TRUE);
         std::cout << "Flowrate: " << std::endl;
         test1.measFlowRate(val, TRUE);
     }
-    */
+    test1.setAnalyteConc(0);
+    test1.setFlowRate(200);
+    Sleep(2000);
+    /*
     pulseGas_constVDS_IDSParameters constP;
-    constP.constVA = .02;
-    constP.constVB = .1;
-    constP.measTime = 300;
+    constP.constVA = -4;
+    constP.constVB = .02;
+    constP.measTime = 30*60;
     constP.dtGas = 10000;
     constP.dtHP = 1000;
     constP.lRange = 12;
@@ -67,7 +72,7 @@ int main()
     double* cMs = new double[arraySizeGas];
 
     tst.runProgram(fRMs, cMs, arraySizeGas, iMs, tMs, dMs, arraySizeHP);
-
+    
     for (int i = 0; i < arraySizeHP; i++) {
         std::cout << "i: " << iMs[i] << std::endl;
         std::cout << "t: " << tMs[i] << std::endl;
@@ -79,8 +84,8 @@ int main()
         std::cout << "C: " << cMs[i] << std::endl;
 
     }
-
-    std::string fn = "constGasTest";
+    
+    std::string fn = "tst";
     tst.saveData(fn, fRMs, cMs, arraySizeGas, iMs, tMs, dMs, arraySizeHP);
     delete iMs;
     delete tMs;

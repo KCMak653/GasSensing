@@ -157,7 +157,16 @@ namespace GM
 
 				i++;
 			} while (nBytesRead > 0);
+			std::cout << "i in _readResponse is: " << i << std::endl;
 			bufferSize_ = i-3;
+			if (bufferSize_ > 13) {
+				bufferSize_ = 13;
+				_purge();
+				std::cout << "BufferSize is too large! " << std::endl;
+				std::cout <<" Maybe something weird "<< std::endl;
+
+				return 1;
+			}
 			if (outputToConsole)
 			{
 				//Print to console
@@ -215,17 +224,23 @@ namespace GM
 	{
 		Status = _sendCmd(measFlowRateCMD_, -1, FALSE);
 		_purge();
-		_readResponse(outputToConsole);
+		int responseStat = _readResponse(outputToConsole);
 		//_readResponse(outputToConsole);
 		std::string strVal;
-		for (unsigned int i = 0; i < bufferSize_; i++)
-		{
-			strVal.push_back(SerialBuffer_[i]);
+		if (!responseStat) {
+			for (unsigned int i = 0; i < bufferSize_; i++)
+			{
+				//std::cout << "i: " << i << std::endl;
+				//std::cout << "SerialBuffer[i]: " << SerialBuffer_[i] << std::endl;
+				strVal.push_back(SerialBuffer_[i]);
+			}
+		//std::cout<<"strVal: "<< strVal <<std::endl;
+		char* charArr;
+		charArr = &strVal[0];
+		sscanf_s(charArr, "%*[^0-9]%lf", &measVal, bufferSize_);
+			//measVal = std::stod(strVal);
 		}
-		if (!strVal.empty()) {
-			measVal = std::stod(strVal);
-		}
-		else measVal = 0;
+		else measVal = -1;
 
 		return 0;
 	}
@@ -234,15 +249,21 @@ namespace GM
 	{
 		Status = _sendCmd(measAnalyteConcCMD_, -1, FALSE);
 		_purge();
-		_readResponse(outputToConsole);
+		
+		int responseStat = _readResponse(outputToConsole);
 		//_readResponse(outputToConsole);
 		std::string strVal;
-		for (unsigned int i = 0; i < bufferSize_; i++)
-		{
-			std::cout << SerialBuffer_[i];
-			strVal.push_back(SerialBuffer_[i]);
+		if (!responseStat) {
+			for (unsigned int i = 0; i < bufferSize_; i++)
+			{
+				//std::cout << SerialBuffer_[i];
+				strVal.push_back(SerialBuffer_[i]);
+			}
+		
+			std::cout << "Analyte Conc: " << strVal << std::endl;
+			measVal = std::stod(strVal);
 		}
-		measVal = std::stod(strVal);
+		else measVal = -1;
 
 		return 0;
 	}

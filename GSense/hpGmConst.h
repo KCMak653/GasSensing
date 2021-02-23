@@ -19,7 +19,7 @@ struct constHPGMParameters
 	int range; //Order of mag of I range [A]
 	int comp; //Compliance, max I value [A]
 	int intTime; //Integration time (1,2,3)(Fast, Normal, Long)
-
+	//bool setV; //Whether to set V
 	int dtHP; //Measurement frequency for HP [ms]
 	double flowRate;
 	double gasConc;
@@ -37,10 +37,19 @@ namespace HPGM
 
 		int runTest(double fRMs[], double cMs[], int sizeArrayGas, int iStartGas, double iMs[], double tMs[], unsigned long dMs[], int sizeArrayHP, int iStartHP);
 
-
 		int arraySizeNeededGas();
 
 		int arraySizeNeededHP();
+
+		int setMeasTime(double measTime);
+
+		int setGasConc(double gasConc);
+
+		int setFlowRate(double flowRate);
+
+		int setConstVA(double v);
+
+		int setConstVB(double v);
 
 		~hpGmConst();
 
@@ -61,7 +70,10 @@ namespace HPGM
 		int dtMin_; //Minimum time of each measurement [ms]
 		int sizeArrayNeededHP_; //Size of array to store measurements
 		int sizeArrayNeededGas_;
+		int sizeArrayNeededStepHP_;
+		int sizeArrayNeededStepGas_;
 		int relFreqHPGas_;
+		bool setV_; //Whether to set V, if true will set to new values (restarts system)
 		//int constSMU1_; //SMU to keep const
 		//int constSMU2_; //SMU to measure
 	};
