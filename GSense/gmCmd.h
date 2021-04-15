@@ -33,6 +33,7 @@ namespace GM
 		int _sendCmd(const std::string baseCmd, T val, bool valNeeded);
 		
 		int _readResponse(bool outputToConsole);
+		int _readValue(double &measVal, bool outputToConsole);
 
 		int _purge();
 	};

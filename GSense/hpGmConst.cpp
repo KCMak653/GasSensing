@@ -47,6 +47,9 @@ namespace HPGM
 		picoAm_->setVBmode(1);
 
 		gasM_->setCarrBase();
+		gasM_->setAnalyteGas(3);
+		gasM_->setFlowRate(flowRate_);
+		gasM_->setAnalyteConc(gasConc_);
 
 		//Set the minimum time of each measurement based on the
 		//desired integration time
@@ -77,9 +80,9 @@ namespace HPGM
 		}
 
 		//Calculate the size of array needed to record measurements
-		sizeArrayNeededHP_ = (measTime_ * 1e3 / dtHP_ + 0.5);
+		sizeArrayNeededHP_ = (measTime_ * 1e3 / dtHP_ + 0.5) + 1;
 		std::cout << "HP array: " << sizeArrayNeededHP_ << std::endl;
-		sizeArrayNeededGas_ = (measTime_ * 1e3 / dtGas_ + 0.5);
+		sizeArrayNeededGas_ = (measTime_ * 1e3 / dtGas_ + 0.5) + 1;
 		std::cout << "Gas array: " << sizeArrayNeededGas_ << std::endl;
 		relFreqHPGas_ = (sizeArrayNeededHP_ - 1) / (sizeArrayNeededGas_ - 1);
 		std::cout << "relFreq: " << relFreqHPGas_ << std::endl;
@@ -114,13 +117,12 @@ namespace HPGM
 		//_getch();
 		//Only force V if setV is true
 		if (setV_) {
+			picoAm_->srcZeroAll();
 			picoAm_->vForce(constVA_, constVB_);
 			setV_ = FALSE;
 		}
 
-		gasM_->setAnalyteGas(3);
-		gasM_->setFlowRate(flowRate_);
-		gasM_->setAnalyteConc(gasConc_);
+
 
 
 		//Run the sweep. 
@@ -156,7 +158,8 @@ namespace HPGM
 		iStartHP = iStartHP + 1;
 		iStartGas = iStartGas + 1;
 
-		for (int i = (iStartGas); i < (iStartGas + sizeArrayNeededGas_); i++) {
+		double Ival = 0;
+		for (int i = (iStartGas); i < (iStartGas + sizeArrayNeededGas_- 1); i++) {
 
 			for (int j = (iStartHP); j < (iStartHP + relFreqHPGas_ ); j++) {
 
@@ -170,12 +173,20 @@ namespace HPGM
 				dMs[j] = delayT;
 
 				std::this_thread::sleep_for(std::chrono::milliseconds(delayT));
+				//std::cout << "j is " << j << std::endl;
+				if (j % 9000 == 0)
+				{
+					
+					Ival = iMs[j];
+				}
 			}
 
 			gasM_->measFlowRate(fRMs[i], FALSE);
 			gasM_->measAnalyteConc(cMs[i], FALSE);
 			iStartHP = iStartHP + relFreqHPGas_;
-			std::cout << "\n Number of seconds remaining: " << (sizeArrayNeededHP_ - iStartHP+1)*dtHP_ << std::endl;
+			std::cout << "Current: " << iMs[iStartHP - 1] << std::endl;
+
+			//std::cout << "\n Number of seconds remaining: " << (sizeArrayNeededHP_ - iStartHP+1)*dtHP_ << std::endl;
 
 			}
 
@@ -206,11 +217,15 @@ namespace HPGM
 
 	int hpGmConst::setGasConc(double gasConc) {
 		gasConc_ = gasConc;
+		gasM_->setAnalyteConc(gasConc_);
 		return 0;
 	}
 
 	int hpGmConst::setFlowRate(double flowRate) {
 		flowRate_ = flowRate;
+		gasM_->setAnalyteConc(0);
+		gasM_->setFlowRate(flowRate_);
+		gasM_->setAnalyteConc(gasConc_);
 		return 0;
 	}
 
@@ -234,6 +249,8 @@ namespace HPGM
 	*/
 	hpGmConst::~hpGmConst() {
 		picoAm_->srcZeroAll();
+		gasM_->setAnalyteConc(0);
+		gasM_->setFlowRate(200);
 		delete picoAm_;
 		delete gasM_;
 	}

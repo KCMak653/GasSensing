@@ -44,6 +44,22 @@ struct pulseGas_constVDS_IDSParameters
 	int intTime; //Integration time (1,2,3)(Fast, Normal, Long)
 };
 
+struct constGas_constVDS_IDSParameters
+{
+	double constVA; //Constant bias to apply [V]
+	double constVB;
+	double measTime; // Total measurement time [s]
+	double dtGas; //Measurement frequency [ms]
+	double dtHP;
+	double flowRate;
+	double gasConc;
+	int lRange; //Order of mag of lowest range [A]
+	int range; //Order of mag of I range [A]
+	int comp; //Compliance, max I value [A}
+	int intTime; //Integration time (1,2,3)(Fast, Normal, Long)
+};
+
+
 struct constVDS_IDSParameters
 {
 	double constVA; //Constant bias to apply [V]
@@ -160,6 +176,27 @@ namespace HPGM
 		double endTime_;
 		int nPulses_;
 	};
+
+	class constGas_constVDS_IDS
+	{
+	public:
+		constGas_constVDS_IDS(const constGas_constVDS_IDSParameters& entries);
+		int runProgram(double fRMs[], double cMs[], int sizeArrayGas, double iMs[], double tMs[], unsigned long dMs[], int sizeArrayHP);
+		int arraySizeNeededGas();
+		int arraySizeNeededHP();
+		int setV(double vA, double vB);
+		int setMeasTime(double t);
+		int setFlowRate(double flowRate);
+		int setGasConc(double gasConc);
+		int saveData(std::string fn, double fRMs[], double cMs[], int sizeArrayGas, double iMs[], double tMs[], unsigned long dMs[], int sizeArrayHP);
+		~constGas_constVDS_IDS();
+	private:
+		constHPGMParameters constP_;
+		HPGM::hpGmConst* cnst_;
+		int sizeArrayNeededGas_;
+		int sizeArrayNeededHP_;
+	};
+
 	/*
 	class stepVDS_IDS
 	{

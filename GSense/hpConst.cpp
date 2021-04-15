@@ -69,6 +69,18 @@ namespace HP
 		picoAm_->srcZeroAll();
 	}
 
+	int hpConst::setV(double vA, double vB) {
+		constVA_ = vA;
+		constVB_ = vB;
+		return 0;
+	}
+
+	int hpConst::setMeasTime(double t) {
+		measTime_ = t;
+		sizeArrayNeeded_ = measTime_ * 1e3 / dt_ + 1.5;
+		return 0;
+	}
+
 	int hpConst::runTest(double iMs[], double tMs[], unsigned long dMs[], int sizeArray, int iStart)
 	{
 		//First ensure that the correct array size has been passed as argument

@@ -32,6 +32,9 @@ namespace HP
 
 		int runTest( double iMs[], double tMs[], unsigned long dMs[], int sizeArray, int iStart);
 
+		int setV(double vA, double vB);
+
+		int setMeasTime(double t);
 
 		int arraySizeNeeded();
 

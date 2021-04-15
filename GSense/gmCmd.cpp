@@ -47,7 +47,7 @@ namespace GM
 			0,
 			NULL);
 		if (hComm_ == INVALID_HANDLE_VALUE) {
-			std::cout << "Error in opening serial port" << std::endl;
+			std::cout << "Error in opening serial port (Gas Mixer)" << std::endl;
 			DWORD lastError = GetLastError();
 			std::cout << lastError << std::endl;
 			exit(1);
@@ -153,12 +153,15 @@ namespace GM
 			do
 			{
 				Status = ReadFile(hComm_, &TempChar, sizeof(TempChar), &nBytesRead, NULL);
-				SerialBuffer_[i] = TempChar;
+				if ((std::isdigit(TempChar)) || (TempChar == '-') || (TempChar == '+') || (TempChar == '.'))
+				{
+					SerialBuffer_[i] = TempChar;
 
-				i++;
+					i++;
+				}
 			} while (nBytesRead > 0);
 			std::cout << "i in _readResponse is: " << i << std::endl;
-			bufferSize_ = i-3;
+			bufferSize_ = i;
 			if (bufferSize_ > 13) {
 				bufferSize_ = 13;
 				_purge();
@@ -176,6 +179,72 @@ namespace GM
 					std::cout << SerialBuffer_[j];
 			}
 			std::cout<<std::endl;
+		}
+
+		return 0;
+	}
+	int gmCmd::_readValue(double &measVal, bool outputToConsole)
+	{
+		//Read response
+		DWORD dwEventMask;
+		char TempChar;
+		DWORD nBytesRead;
+		int i = 0;
+		//Set receive mask
+		Status = SetCommMask(hComm_, EV_RXCHAR); //Configure Windows to monitor for character reception
+		if (Status == FALSE) {
+			std::cout << "Error! in Setting CommMask" << std::endl;
+			// return(6);
+		}
+
+
+		// Set WaitComm() Event
+
+
+
+		Status = WaitCommEvent(hComm_, &dwEventMask, NULL); //Wait for character to be received
+
+
+		if (Status == FALSE)
+		{
+			std::cout << "Error! in Setting WaitCommEvent()" << std::endl;
+			//return(7);
+		}
+		else { // If true, read the RXed data using ReadFile()
+
+			do
+			{
+				Status = ReadFile(hComm_, &TempChar, sizeof(TempChar), &nBytesRead, NULL);
+				if ((std::isdigit(static_cast<unsigned char>(TempChar))) || (TempChar == '-') || (TempChar == '+') || (TempChar == '.'))
+				{
+					SerialBuffer_[i] = TempChar;
+
+					i++;
+				}
+			} while (nBytesRead > 0);
+			//std::cout << "i in _readResponse is: " << i << std::endl;
+			bufferSize_ = i;
+			if (bufferSize_ == 0) {
+				bufferSize_ = 13;
+				_purge();
+				std::cout << "No Numbers outputted! " << std::endl;
+				std::cout << " Maybe something weird " << std::endl;
+				measVal = -1;
+				return 1;
+			}
+			else {
+				measVal = atof(SerialBuffer_);
+			}
+
+			if (outputToConsole)
+			{
+				//Print to console
+				std::cout << "\n\n  Measured Value:   ";
+				int j = 0;
+				for (j = 0; j < i - 1; j++)
+					std::cout << SerialBuffer_[j];
+			}
+			std::cout << std::endl;
 		}
 
 		return 0;
@@ -224,24 +293,28 @@ namespace GM
 	{
 		Status = _sendCmd(measFlowRateCMD_, -1, FALSE);
 		_purge();
-		int responseStat = _readResponse(outputToConsole);
+		int responseStat = _readValue(measVal, outputToConsole);
 		//_readResponse(outputToConsole);
-		std::string strVal;
-		if (!responseStat) {
+		//std::string strVal;
+		//if (!responseStat) {
+			/*
 			for (unsigned int i = 0; i < bufferSize_; i++)
 			{
-				//std::cout << "i: " << i << std::endl;
-				//std::cout << "SerialBuffer[i]: " << SerialBuffer_[i] << std::endl;
+				std::cout << "i: " << i << std::endl;
+				std::cout << "SerialBuffer[i]: " << SerialBuffer_[i] << std::endl;
 				strVal.push_back(SerialBuffer_[i]);
 			}
+			
 		//std::cout<<"strVal: "<< strVal <<std::endl;
 		char* charArr;
 		charArr = &strVal[0];
-		sscanf_s(charArr, "%*[^0-9]%lf", &measVal, bufferSize_);
+		sscanf_s(charArr, "%*[^0-9]%d%lf", &measVal, bufferSize_);
 			//measVal = std::stod(strVal);
-		}
-		else measVal = -1;
-
+			*/
+			//measVal = atof(SerialBuffer_);
+		//}
+		//else measVal = -1;
+		std::cout << "Flow Rate: " << measVal << std::endl;
 		return 0;
 	}
 
@@ -250,7 +323,8 @@ namespace GM
 		Status = _sendCmd(measAnalyteConcCMD_, -1, FALSE);
 		_purge();
 		
-		int responseStat = _readResponse(outputToConsole);
+		int responseStat = _readValue(measVal, outputToConsole);
+		/*
 		//_readResponse(outputToConsole);
 		std::string strVal;
 		if (!responseStat) {
@@ -264,7 +338,8 @@ namespace GM
 			measVal = std::stod(strVal);
 		}
 		else measVal = -1;
-
+				*/
+		std::cout << "Analyte Conc: " << measVal << std::endl;
 		return 0;
 	}
 
@@ -294,7 +369,12 @@ namespace GM
 		double measFlow;
 		//Return if it already is in range
 		measFlowRate(measFlow, TRUE);
+		std::cout << "Initial flow rate -set baseline" << measFlow << std::endl;
 		if ((measFlow > 150) & (measFlow < 300)) {
+			return 0;
+		}
+		if (measFlow > 250) {
+			setFlowRate(200);
 			return 0;
 		}
 		bool notSet = TRUE;
@@ -310,6 +390,7 @@ namespace GM
 			}
 
 			measFlowRate(measFlow, TRUE);
+			std::cout << "Measured flow rate -set baseline" << measFlow << std::endl;
 			notSet = (measFlow < 150.);
 			nTimes++;
 			if (nTimes > 3) {

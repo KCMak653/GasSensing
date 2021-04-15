@@ -322,8 +322,129 @@ namespace HPGM
 		delete cnst_;
 	}
 
+	constGas_constVDS_IDS::constGas_constVDS_IDS(const constGas_constVDS_IDSParameters& entries)
+	{
+		//Set all private member variables to inputs
+		constP_.dtGas = entries.dtGas;
+		constP_.dtHP = entries.dtHP;
+
+		constP_.measTime = entries.measTime;
+		constP_.constVA = entries.constVA;
+		constP_.constVB = entries.constVB;
+		constP_.lRange = entries.lRange;
+		constP_.range = entries.range;
+		constP_.comp = entries.comp;
+		constP_.intTime = entries.intTime;
+
+		constP_.flowRate = entries.flowRate;
+		constP_.gasConc = entries.gasConc;
+
+		cnst_ = new HPGM::hpGmConst(constP_);
+
+		sizeArrayNeededGas_ = cnst_->arraySizeNeededGas();
+		sizeArrayNeededHP_ = cnst_->arraySizeNeededHP();
+	}
+
+	int constGas_constVDS_IDS::arraySizeNeededGas()
+	{
+		return sizeArrayNeededGas_;
+	}
+
+	int constGas_constVDS_IDS::arraySizeNeededHP()
+	{
+		return sizeArrayNeededHP_;
+	}
+
+	int constGas_constVDS_IDS::setV(double vA, double vB) {
+		cnst_->setConstVA(vA);
+		cnst_->setConstVB(vB);
+		return 0;
+	}
+
+	int constGas_constVDS_IDS::setMeasTime(double t) {
+		cnst_->setMeasTime(t);
+		sizeArrayNeededGas_ = cnst_->arraySizeNeededGas();
+		sizeArrayNeededHP_ = cnst_->arraySizeNeededHP();
+		return 0;
+	}
+
+	int constGas_constVDS_IDS::setGasConc(double gasConc) {
+		cnst_->setGasConc(gasConc);
+		return 0;
+	}
+
+	int constGas_constVDS_IDS::setFlowRate(double flowRate) {
+		cnst_->setFlowRate(flowRate);
+		return 0;
+	}
+
+	int constGas_constVDS_IDS::runProgram(double fRMs[], double cMs[], int sizeArrayGas, double iMs[], double tMs[], unsigned long dMs[], int sizeArrayHP)
+	{
+		if (sizeArrayGas != sizeArrayNeededGas_) {
+			std::cout << "Incorrect Gas Array size" << std::endl;
+			return 1;
+		}
+
+		if (sizeArrayHP != sizeArrayNeededHP_) {
+			std::cout << "Incorrect HP Array size" << std::endl;
+			return 1;
+		}
+
+		int iStartGas = 0;
+		int iStartHP = 0;
+
+		cnst_->runTest(fRMs, cMs, sizeArrayGas, iStartGas, iMs, tMs, dMs, sizeArrayHP, iStartHP);
+		//cnst_->setGasConc(0);
+		//cnst_->setFlowRate(200);
+		Sleep(7000);
+		return 0;
+	}
+
+	int constGas_constVDS_IDS::saveData(std::string fn, double fRMs[], double cMs[], int sizeArrayGas, double iMs[], double tMs[], unsigned long dMs[], int sizeArrayHP)
+	{
+
+		//Data directory
+		std::string direc = "C:/Users/ECAN/Documents/KMData/Data/";
+		//save as text file
+		std::string frmt = ".csv";
+
+		//Build file name for data and a second one to save test parameters
+		std::string fp = direc + fn + frmt;
+		std::string fpG = direc + fn + "_Gas" + frmt;
+		std::string fpP = direc + fn + "_Param" + frmt;
+
+		std::ofstream myfile;
+		myfile.open(fp);
+		myfile << "iMeas [A], time [ms], dTime [ms]\n";
+		for (int i = 0; i < sizeArrayHP; i++)
+		{
+			myfile << iMs[i] << ',' << tMs[i] << ',' << dMs[i] << "\n";
+		}
+		myfile.close();
+		std::ofstream myfile3;
+		myfile3.open(fpG);
+		myfile3 << "flowRate [ccm], gasConc [ppm]\n";
+		for (int i = 0; i < sizeArrayGas; i++) {
+			myfile3 << fRMs[i] << ',' << cMs[i] << "\n";
+		}
+		//std::string fnP = "P_" + fn;
+		std::ofstream myfile2;
+		myfile2.open(fpP);
+		myfile2 << "dtHP [ms],dtGas [ms], initTime [s], pulseTime [s], stepTime [s], endTime [s], nPulses, constVA [V], constVB [V], flowRate [ccm], gasConc [ppm], lRange, range, comp, intTime\n";
+		myfile2 << constP_.dtHP << ',' << constP_.dtGas << "," << constP_.measTime 
+			<< ',' << constP_.constVA << ',' << constP_.constVB << ','
+			<< constP_.flowRate << ',' << constP_.gasConc << ',' << constP_.lRange << ',' << constP_.range << ',' << constP_.comp << ','
+			<< constP_.intTime << "\n";
+		myfile2.close();
+
+		return 0;
+	}
+
+	constGas_constVDS_IDS::~constGas_constVDS_IDS() {
+		delete cnst_;
+	}
 	/*
-	stepVDS_IDS::stepVDS_IDS(const stepVDS_IDSParameters& entries) {
+		stepVDS_IDS::stepVDS_IDS(const stepVDS_IDSParameters& entries) {
 
 		//Set all private member variables to inputs
 		stepP_.dt = entries.dt;

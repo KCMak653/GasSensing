@@ -21,6 +21,7 @@ struct constHPGMParameters
 	int intTime; //Integration time (1,2,3)(Fast, Normal, Long)
 	//bool setV; //Whether to set V
 	int dtHP; //Measurement frequency for HP [ms]
+
 	double flowRate;
 	double gasConc;
 	//char constSMU1; //SMU to keep constant
