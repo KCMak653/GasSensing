@@ -6,6 +6,7 @@
 #include <iostream>
 #include "gmCmd.h"
 #include "hpCmd.h"
+#include "rcCmd.h"
 #include "hpConst.h"
 #include "hpGmConst.h"
 #include "hpSweep.h"
@@ -13,22 +14,100 @@
 #include <thread>
 #include <conio.h>
 
+int rcTest();
+int gmTest();
+int pulseGasTest();
+int troubleshootGM();
+int multiConstHPGMTest();
+int constVDS_IDSTest();
+int sweepVDS_IDSTest();
+int constHPGMTest();
+
 int main()
 {
-    std::cout << "Hello World!\n";
-   /* 
-   GM::gmCmd test1;
+    //rcTest();
+    multiConstHPGMTest();
+    return 0;
+
+}
+
+int constHPGMTest() {
+    constGas_constVDS_IDSParameters constP;
+    constP.constVA = 0;
+    constP.constVB = .02;
+    constP.measTime = 30;
+    constP.dtGas = 6000;
+    constP.dtHP = 2000;
+    constP.lRange = 12;
+    constP.range = 1;
+    constP.intTime = 1;
+    constP.comp = 1;
+    constP.nChannels = 3;
+    constP.flowRate = 230;
+    constP.gasConc = 0;
+
+    int chMeas[] = { 1, 1, 0, 1, 0, 0, 0 };
+    int nC = 0;
+    for (int i = 0; i < 7; i++) {
+        constP.chMeas[i] = chMeas[i];
+        if (chMeas[i] != 0) nC++;
+    }
+    HPGM::constGas_constVDS_IDS tst(constP);
+    int arraySizeGas = tst.arraySizeNeededGas();
+    int arraySizeHP = tst.arraySizeNeededHP();
+    //double* vFs = new double[arraySize];
+    double* iMs = new double[arraySizeHP*nC];
+    double* tMs = new double[arraySizeHP];
+    unsigned long* dMs = new unsigned long[arraySizeHP];
+
+    double* fRMs = new double[arraySizeGas];
+    double* cMs = new double[arraySizeGas];
+    std::string fn = "test";
+    //char a;
+    //Pre -initial
+
+
+    tst.runProgram(fRMs, cMs, arraySizeGas, iMs, tMs, dMs, arraySizeHP);
+    //fn = "FRtest";
+    tst.saveData(fn, fRMs, cMs, arraySizeGas, iMs, tMs, dMs, arraySizeHP);
+    delete iMs;
+    delete tMs;
+    delete dMs;
+    delete fRMs;
+    delete cMs;
+    return 0;
+}
+
+int rcTest() {
+    unsigned long preDelayT = 20000;
+    RC::rcCmd rc1;
+    rc1.chOff(1);
+    //rc1.chOn(4);
+    /*
+    std::this_thread::sleep_for(std::chrono::milliseconds(preDelayT));
+    rc1.chOff(4);
+    rc1.chOn(1);
     
-    
+    std::this_thread::sleep_for(std::chrono::milliseconds(preDelayT));
+    rc1.chSwitch(4, 3);
+    std::this_thread::sleep_for(std::chrono::milliseconds(preDelayT));
+    rc1.chOff(4);
+    */
+    return 0;
+}
+int gmTest() {
+    GM::gmCmd test1;
+
+
     test1.setFlowRate(2000);
-    
+
     double val;
     Sleep(16000);
     //getch();
     test1.measFlowRate(val, TRUE);
     //test1.setCarrBase();
-    
-    /*
+
+
     test1.measFlowRate(val, TRUE);
     test1.setAnalyteGas(3);
     test1.setFlowRate(300);
@@ -45,12 +124,14 @@ int main()
     test1.setAnalyteConc(0);
     test1.setFlowRate(200);
     Sleep(2000);
-    */
+    return 0;
+}
+int pulseGasTest() {
     /*
     pulseGas_constVDS_IDSParameters constP;
     constP.constVA = -4;
     constP.constVB = .02;
-    constP.measTime = 30*60;
+    constP.measTime = 30 * 60;
     constP.dtGas = 10000;
     constP.dtHP = 1000;
     constP.lRange = 12;
@@ -62,8 +143,8 @@ int main()
     constP.gasConc = 300;
 
     HPGM::pulseGas_constVDS_IDS tst(constP);
-    
-    
+
+
     int arraySizeGas = tst.arraySizeNeededGas();
     int arraySizeHP = tst.arraySizeNeededHP();
     //double* vFs = new double[arraySize];
@@ -75,7 +156,7 @@ int main()
     double* cMs = new double[arraySizeGas];
 
     tst.runProgram(fRMs, cMs, arraySizeGas, iMs, tMs, dMs, arraySizeHP);
-    
+
     for (int i = 0; i < arraySizeHP; i++) {
         std::cout << "i: " << iMs[i] << std::endl;
         std::cout << "t: " << tMs[i] << std::endl;
@@ -87,7 +168,7 @@ int main()
         std::cout << "C: " << cMs[i] << std::endl;
 
     }
-    
+
     std::string fn = "tst";
     tst.saveData(fn, fRMs, cMs, arraySizeGas, iMs, tMs, dMs, arraySizeHP);
     delete iMs;
@@ -95,9 +176,10 @@ int main()
     delete dMs;
     delete fRMs;
     delete cMs;
-
     */
-    /*
+    return 0;
+}
+int troubleshootGM() {
     char TempChar[13] = "bnmkh";
     char SerialBuffer_[256];
     int bufferSize_ = 10;
@@ -125,56 +207,57 @@ int main()
         strVal.push_back(SerialBuffer_[i]);
     }
     */
-/*
-    measVal = atof(SerialBuffer_);
-    std::cout<<"strVal: "<< measVal <<std::endl;
-    */
-    //char* charArr;
-    //charArr = &strVal[0];
-    //sscanf_s(charArr, "%*[^0-9]%d%lf", &measVal, bufferSize_);
-    //measVal = std::stod(strVal);
-    
+    /*
+        measVal = atof(SerialBuffer_);
+        std::cout<<"strVal: "<< measVal <<std::endl;
+
+        //char* charArr;
+        //charArr = &strVal[0];
+        //sscanf_s(charArr, "%*[^0-9]%d%lf", &measVal, bufferSize_);
+        //measVal = std::stod(strVal);
+        */
+    return 0;
+}
+int multiConstHPGMTest()
+{
     int saveFreq = 5;
-    int tMeas = 432000;
+    int tMeas = 180; //here
     constGas_constVDS_IDSParameters constP;
-    constP.constVA = -8;
+    constP.constVA = -8; //here
     constP.constVB = .02;
-    constP.measTime = 86400;
-    constP.dtGas = 5000;
-    constP.dtHP = 1000;
+    constP.measTime = 154800; //here
+    constP.dtGas = 6000;
+    constP.dtHP = 3000;
     constP.lRange = 12;
     constP.range = 1;
-    constP.intTime = 1;
+    constP.intTime = 2;
     constP.comp = 1;
-
+    constP.nChannels = 1;
     constP.flowRate = 230;
     constP.gasConc = 0;
-
+    int chMeas[] = { 1, 0, 0, 0, 0, 0, 0 };
+    int nC = 0;
+    for (int i = 0; i < 7; i++) {
+        constP.chMeas[i] = chMeas[i];
+        if (chMeas[i] != 0) nC++;
+    }
     HPGM::constGas_constVDS_IDS tst(constP);
 
-    
+
     int arraySizeGas = tst.arraySizeNeededGas();
     int arraySizeHP = tst.arraySizeNeededHP();
     //double* vFs = new double[arraySize];
-    double* iMs = new double[arraySizeHP];
+    double* iMs = new double[arraySizeHP * nC];
     double* tMs = new double[arraySizeHP];
     unsigned long* dMs = new unsigned long[arraySizeHP];
 
     double* fRMs = new double[arraySizeGas];
     double* cMs = new double[arraySizeGas];
-    std::string fn = "FRtest";
+    std::string fn = "concDMMP_VG-8";
     //char a;
     //Pre -initial
-    /*
-    for (int i = 0; i < saveFreq; i++) {
-        tst.runProgram(fRMs, cMs, arraySizeGas, iMs, tMs, dMs, arraySizeHP);
-        fn = "DMMPquick_heatRecover_D";
-        a = '0' + i;
-        fn.push_back(a);
-        tst.saveData(fn, fRMs, cMs, arraySizeGas, iMs, tMs, dMs, arraySizeHP);
-    }
-    */
-    
+
+
     tst.runProgram(fRMs, cMs, arraySizeGas, iMs, tMs, dMs, arraySizeHP);
     //fn = "FRtest";
     tst.saveData(fn, fRMs, cMs, arraySizeGas, iMs, tMs, dMs, arraySizeHP);
@@ -183,20 +266,20 @@ int main()
     delete dMs;
     delete fRMs;
     delete cMs;
-    
-    
+
+
     double gasConc = 0;
     double flowRate = 300;
     char status = 'g';
     double mT1 = 40;
     double mT2 = 60;
     double mT3 = 20;
-    
+
     int i = 0;
     char a;
     while (status == 'g') {
         std::cout << "gasConc: " << std::endl;
-        std::cin >>gasConc;
+        std::cin >> gasConc;
         std::cout << "flowRate: " << std::endl;
         std::cin >> flowRate;
         std::cout << "mT1: " << std::endl;
@@ -211,7 +294,7 @@ int main()
         arraySizeGas = tst.arraySizeNeededGas();
         arraySizeHP = tst.arraySizeNeededHP();
         //double* vFs = new double[arraySize];
-        double* iMs = new double[arraySizeHP];
+        double* iMs = new double[arraySizeHP * nC];
         double* tMs = new double[arraySizeHP];
         unsigned long* dMs = new unsigned long[arraySizeHP];
 
@@ -220,7 +303,7 @@ int main()
 
         tst.runProgram(fRMs, cMs, arraySizeGas, iMs, tMs, dMs, arraySizeHP);
         a = '0' + i;
-        fn = "FRtest_initial";
+        fn = "concDMMP_initial_VG-8";
         fn.push_back(a);
         std::cout << fn << std::endl;
         tst.saveData(fn, fRMs, cMs, arraySizeGas, iMs, tMs, dMs, arraySizeHP);
@@ -229,7 +312,6 @@ int main()
         delete dMs;
         delete fRMs;
         delete cMs;
-        
 
         //Pulse run
         tst.setFlowRate(flowRate);
@@ -238,7 +320,7 @@ int main()
         arraySizeGas = tst.arraySizeNeededGas();
         arraySizeHP = tst.arraySizeNeededHP();
         //double* vFs = new double[arraySize];
-        double* iMs2 = new double[arraySizeHP];
+        double* iMs2 = new double[arraySizeHP * nC];
         double* tMs2 = new double[arraySizeHP];
         unsigned long* dMs2 = new unsigned long[arraySizeHP];
 
@@ -247,7 +329,7 @@ int main()
         //Pre -initial
         tst.runProgram(fRMs2, cMs2, arraySizeGas, iMs2, tMs2, dMs2, arraySizeHP);
         a = '0' + i;
-        fn = "FRtest_pulse";
+        fn = "concDMMP_pulse_VG-8";
         fn.push_back(a);
         std::cout << fn << std::endl;
         tst.saveData(fn, fRMs2, cMs2, arraySizeGas, iMs2, tMs2, dMs2, arraySizeHP);
@@ -258,13 +340,13 @@ int main()
         delete cMs2;
 
         //Settle
-        tst.setFlowRate(300);
+        tst.setFlowRate(230);
         tst.setGasConc(0);
         tst.setMeasTime(mT3);
         arraySizeGas = tst.arraySizeNeededGas();
         arraySizeHP = tst.arraySizeNeededHP();
         //double* vFs = new double[arraySize];
-        double* iMs3 = new double[arraySizeHP];
+        double* iMs3 = new double[arraySizeHP * nC];
         double* tMs3 = new double[arraySizeHP];
         unsigned long* dMs3 = new unsigned long[arraySizeHP];
 
@@ -273,7 +355,7 @@ int main()
         //Pre -initial
         tst.runProgram(fRMs3, cMs3, arraySizeGas, iMs3, tMs3, dMs3, arraySizeHP);
         a = '0' + i;
-        fn = "FRtest_settle";
+        fn = "concDMMP_settle_VG-8";
         fn.push_back(a);
         std::cout << fn << std::endl;
         tst.saveData(fn, fRMs3, cMs3, arraySizeGas, iMs3, tMs3, dMs3, arraySizeHP);
@@ -289,36 +371,15 @@ int main()
 
         std::cout << "status: " << std::endl;
         std::cin >> status;
-        
+
 
         i++;
 
-    } 
-    
-    /*
-    for (int i = 0; i < arraySizeHP; i++) {
-        std::cout << "i: " << iMs[i] << std::endl;
-        std::cout << "t: " << tMs[i] << std::endl;
-        std::cout << "d: " << dMs[i] << std::endl;
     }
+    return 0;
 
-    for (int i = 0; i < arraySizeGas; i++) {
-        std::cout << "FR: :" << fRMs[i] << std::endl;
-        std::cout << "C: " << cMs[i] << std::endl;
-
-    }
-    
-    std::string fn = "test";
-    tst.saveData(fn, fRMs, cMs, arraySizeGas, iMs, tMs, dMs, arraySizeHP);
-    delete iMs;
-    delete tMs;
-    delete dMs;
-    delete fRMs;
-    delete cMs;
-    char c;
-
-    std::cin >> c;
-    */
+}
+int constVDS_IDSTest() {
     /*
     constVDS_IDSParameters constP;
     constP.constVA = .02;
@@ -331,7 +392,7 @@ int main()
     constP.comp = 1;
     //constP.constSMU1 = 'A';
     //constP.constSMU2 = 'B';
-    
+
     HP::constVDS_IDS tst(constP);
 
     int arraySize = tst.arraySizeNeeded();
@@ -351,12 +412,16 @@ int main()
         std::cout << "t: " << tMs[i] << std::endl;
         std::cout << "d: " << dMs[i] << std::endl;
     }
-    
+
 
     delete iMs;
     delete tMs;
     delete dMs;
-    
+    */
+    return 0;
+}
+int sweepVDS_IDSTest() {
+
     /*
     sweepVDS_IDSParameters constP;
     constP.constV = 0.02;
@@ -380,7 +445,7 @@ int main()
 
     int arraySize = tst.arraySizeNeeded();
     std::cout << arraySize << std::endl;
-    
+
     double* vFs = new double[arraySize];
     double* iMs = new double[arraySize];
     double* tMs = new double[arraySize];
@@ -399,71 +464,8 @@ int main()
     delete iMs;
     delete tMs;
     delete dMs;
-    
-    /*
-    HP::hpCmd test2;
-    test2.setIntTime(1);
-    test2.setRange(1);
-    test2.setLRange(12);
-    test2.srcZeroAll();
-
-    
-    /*
-    double val = 0.000002545151351;
-    std::string str = std::to_string(val);
-    std::cout << str << std::endl;
-    char cmd[] = "PA+00000.00000;";
-    std::cout << strlen(cmd) << std::endl;
-    std::cout << sizeof(cmd) << std::endl;
-    int i;
-    for (i = 0; i < strlen(str.c_str()); i++)
-        cmd[i+2] = str[i];
-    cmd[i + 2] = ';';
-    for (i = i+1; i < (strlen(cmd)-2); i++)
-        cmd[i+2] = ' ';
-
-    std::cout <<i<< cmd << std::endl;
-    */
-    /*
-    auto now = std::chrono::high_resolution_clock::now();
-    //auto start2 = std::chrono::high_resolution_clock::now();
-    
-    //auto now_ms = std::chrono::time_point_cast<std::chrono::milliseconds>(now);
-    auto now2 = std::chrono::high_resolution_clock::now();
-    double dt = 50;
-    double mt, dl;
-    static unsigned long dely;
-    for (int i = 0; i < 10; i++) {
-        std::cout << i << std::endl;
-        now2 = std::chrono::high_resolution_clock::now();
-        mt = std::chrono::duration_cast<std::chrono::milliseconds> (now2 - now).count();
-        std::cout << mt << std::endl;
-        dely = dt - mt;
-        std::this_thread::sleep_for(std::chrono::milliseconds(dely));
-    }
-
-    /*auto now2 = std::chrono::high_resolution_clock::now();
-    //auto start2 = std::chrono::high_resolution_clock::now();
-
-    auto now2_ms = std::chrono::time_point_cast<std::chrono::milliseconds>(now2);
-    //auto value = now_ms.time_since_epoch();
-    //long duration = value.count();
-    //std::chrono::milliseconds dur(duration);
-    //std::chrono::time_point<std::chrono::high_resolution_clock> dt(dur);
-    double b = std::chrono::duration_cast<std::chrono::milliseconds>(now2_ms - now_ms).count();
-    std::cout << b << std::endl;
-    
     */
 
+    return 0;
 }
 
-// Run program: Ctrl + F5 or Debug > Start Without Debugging menu
-// Debug program: F5 or Debug > Start Debugging menu
-
-// Tips for Getting Started: 
-//   1. Use the Solution Explorer window to add/manage files
-//   2. Use the Team Explorer window to connect to source control
-//   3. Use the Output window to see build output and other messages
-//   4. Use the Error List window to view errors
-//   5. Go to Project > Add New Item to create new code files, or Project > Add Existing Item to add existing code files to the project
-//   6. In the future, to open this project again, go to File > Open > Project and select the .sln file

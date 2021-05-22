@@ -24,6 +24,8 @@ struct constHPGMParameters
 
 	double flowRate;
 	double gasConc;
+	int nChannels;
+	int chMeas[7];
 	//char constSMU1; //SMU to keep constant
 	//char constSMU2;
 };
@@ -66,6 +68,7 @@ namespace HPGM
 		int intTime_; //Integration time (1,2,3)(Fast, Normal, Long)
 		HP::hpCmd* picoAm_; //Ptr to Keithley command
 		GM::gmCmd* gasM_; //Ptr to gas mixer
+		RC::rcCmd* rc_; //Ptr to relays
 		double flowRate_;
 		double gasConc_;
 		int dtMin_; //Minimum time of each measurement [ms]
@@ -74,6 +77,8 @@ namespace HPGM
 		int sizeArrayNeededStepHP_;
 		int sizeArrayNeededStepGas_;
 		int relFreqHPGas_;
+		int nChannels_;
+		int chMeas_[7];
 		bool setV_; //Whether to set V, if true will set to new values (restarts system)
 		//int constSMU1_; //SMU to keep const
 		//int constSMU2_; //SMU to measure

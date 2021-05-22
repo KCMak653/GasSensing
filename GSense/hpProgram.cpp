@@ -1,5 +1,6 @@
 #include "hpCmd.h"
 #include "gmCmd.h"
+#include "rcCmd.h"
 #include "hpSweep.h"
 #include "hpConst.h"
 #include "hpGmConst.h"
@@ -339,10 +340,18 @@ namespace HPGM
 		constP_.flowRate = entries.flowRate;
 		constP_.gasConc = entries.gasConc;
 
+		for (int i = 0; i < 7; i++) {
+			chMeas_[i] = entries.chMeas[i];
+			constP_.chMeas[i] = entries.chMeas[i];
+		}
+		nChannels_ = entries.nChannels;
+		constP_.nChannels = entries.nChannels;
 		cnst_ = new HPGM::hpGmConst(constP_);
 
 		sizeArrayNeededGas_ = cnst_->arraySizeNeededGas();
 		sizeArrayNeededHP_ = cnst_->arraySizeNeededHP();
+
+		
 	}
 
 	int constGas_constVDS_IDS::arraySizeNeededGas()
@@ -415,10 +424,17 @@ namespace HPGM
 
 		std::ofstream myfile;
 		myfile.open(fp);
-		myfile << "iMeas [A], time [ms], dTime [ms]\n";
+		for (int n = 0; n < nChannels_; n++) {
+			myfile << "iMeas [A] - Dev " << chMeas_[n] << ", ";
+		}
+		myfile <<" time [ms], dTime [ms]\n";
 		for (int i = 0; i < sizeArrayHP; i++)
 		{
-			myfile << iMs[i] << ',' << tMs[i] << ',' << dMs[i] << "\n";
+			for (int n = 0; n < nChannels_; n++) {
+				myfile << iMs[i * nChannels_ + n] << ',';
+			}
+				
+			myfile << tMs[i] << ',' << dMs[i] << "\n";
 		}
 		myfile.close();
 		std::ofstream myfile3;

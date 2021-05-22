@@ -57,6 +57,8 @@ struct constGas_constVDS_IDSParameters
 	int range; //Order of mag of I range [A]
 	int comp; //Compliance, max I value [A}
 	int intTime; //Integration time (1,2,3)(Fast, Normal, Long)
+	int nChannels; //Number of measchannels
+	int chMeas[7];
 };
 
 
@@ -195,6 +197,8 @@ namespace HPGM
 		HPGM::hpGmConst* cnst_;
 		int sizeArrayNeededGas_;
 		int sizeArrayNeededHP_;
+		int nChannels_;
+		int chMeas_[7];
 	};
 
 	/*
